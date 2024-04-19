@@ -1,0 +1,7 @@
+torch==2.2.2
+torchvision
+numpy
+torchnet
+scipy
+tqdm
+matplotlib
