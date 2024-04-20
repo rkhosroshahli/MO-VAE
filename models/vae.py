@@ -74,4 +74,4 @@ class VAE(nn.Module):
         mu, log_var = self.encode(x)
         z = self.reparameterize(mu, log_var)
         x_reconstructed = self.decode(z)
-        return x_reconstructed, mu, log_var
+        return x_reconstructed, mu, log_var, z

@@ -147,25 +147,27 @@ class BasicBalancer(torch.nn.Module):
             return grads
 
     @staticmethod
-    def compute_losses(data: torch.Tensor, targets: dict, model: torch.nn.Module, criteria: dict, **kwargs):
+    def compute_losses(data: torch.Tensor, model: torch.nn.Module, criteria: dict, **kwargs):
         BasicBalancer.zero_grad_model(model)
-        hrepr = model.encoder(data)
+        # hrepr = model.encoder(data)
+        # reconstructed, mu, log_var = model(data)
+
+        out = model(data)
+        hrepr = out[-1]
 
         losses = {}
         for task_id in criteria:
-            losses[task_id] = criteria[task_id](model.decoders[task_id](hrepr), targets[task_id])
+            losses[task_id] = criteria[task_id](data, out)
         return losses, hrepr
 
-    def step_with_model(self, data: torch.Tensor, targets: dict, model: torch.nn.Module, criteria: dict,
+    def step_with_model(self, data: torch.Tensor, model: torch.nn.Module, criteria: dict,
                         **kwargs) -> None:
-        losses, hrepr = self.compute_losses(data, targets, model, criteria)
+        losses, hrepr = self.compute_losses(data, model, criteria)
         self.step(losses=losses,
-                  shared_params=list(model.encoder.parameters()),
-                  task_specific_params={task_id: list(model.decoders.parameters()) for task_id in model.decoders},
+                  shared_params=list(model.parameters()),
+                  task_specific_params=list(model.decoder.parameters()),
                   shared_representation=hrepr,
-                  last_shared_layer_params=list(model.last_shared_layer.parameters())
-                                          if model.last_shared_layer is not None
-                                          else None)
+                  last_shared_layer_params=None)
 
     def step(self, losses, shared_params, task_specific_params, shared_representation=None,
              last_shared_layer_params=None) -> None:
