@@ -30,7 +30,10 @@ class AlignedMTLBalancer(basic_balancer.BasicBalancer):
         if self.scale_decoder_grad is True:
             self.apply_decoder_scaling(task_specific_params, weights)
 
-        self.set_losses({task_id: losses[task_id] * weights[i] for i, task_id in enumerate(losses)})
+        # print(grad.shape, weights)
+        # self.set_losses({task_id: losses[task_id] * weights[i] for i, task_id in enumerate(losses)})
+        self.set_loss_weights({task_id: weights[i] for i, task_id in enumerate(losses)})
+        self.set_losses(losses)
 
 
 @balancers.register("amtlub")

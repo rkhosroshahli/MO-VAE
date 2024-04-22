@@ -13,42 +13,47 @@ class PrintLayer(nn.Module):
 
 
 class UnFlatten(nn.Module):
+    def __init__(self):
+        super(UnFlatten, self).__init__()
     def forward(self, input, size=128):
-        return input.view(input.size(0), size, 4, 4)
+        return input.view(-1, size, 4, 4)
 
 
 # Define the VAE model
 class VAE(nn.Module):
-    def __init__(self):
+    def __init__(self, latent_dim):
         super(VAE, self).__init__()
 
         # Encoder
         self.encoder = nn.Sequential(
             nn.Conv2d(3, 32, kernel_size=4, stride=2, padding=1),  # 32x32x3 -> 16x16x32
+            # nn.BatchNorm2d(32),
             nn.ReLU(),
+            # PrintLayer(),
             nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1),  # 16x16x32 -> 8x8x64
+            # nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),  # 8x8x64 -> 4x4x128
+            # nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.Flatten(),  # 26x26x128 -> 128x26x26
-            nn.Linear(128 * 4 * 4, 16)  # 128x26x26 -> 16
         )
         # Latent space
-        self.mu = nn.Linear(16, 2)  # mean of the latent space
-        self.log_var = nn.Linear(16, 2)  # log variance of the latent space
+        self.mu = nn.Linear(128 * 4 * 4, latent_dim)  # mean of the latent space
+        self.log_var = nn.Linear(128 * 4 * 4, latent_dim)  # log variance of the latent space
         # Decoder
         self.decoder = nn.Sequential(
-            nn.Linear(2, 128 * 4 * 4),  # 128 -> 128x4x4
-            nn.ReLU(),
+            nn.Linear(latent_dim, 128 * 4 * 4),  # 128 -> 128x4x4
             UnFlatten(),  # 128x4x4 -> 4x4x128
-
             nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),  # 4x4x128 -> 8x8x64
-
+            # nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),  # 8x8x64 ->   16x16x32
+            # nn.BatchNorm2d(32),
             nn.ReLU(),
-            nn.ConvTranspose2d(32, 3, kernel_size=4, stride=2, padding=1)  # 16x16x32 -> 32x32x3
-
+            nn.ConvTranspose2d(32, 3, kernel_size=4, stride=2, padding=1),  # 16x16x32 -> 32x32x3
+            # nn.BatchNorm2d(3),
+            nn.Sigmoid()
         )
 
     def encode(self, x):

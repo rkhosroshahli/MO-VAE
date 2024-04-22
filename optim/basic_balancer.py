@@ -10,9 +10,13 @@ class BasicBalancer(torch.nn.Module):
         self.compute_stats = compute_stats
         self.info = None
         self.losses = defaultdict(float)
+        self.loss_weights = defaultdict(float)
 
     def set_losses(self, losses):
         self.losses = {task_id: float(losses[task_id]) for task_id in losses}
+
+    def set_loss_weights(self, weights):
+        self.loss_weights = {task_id: float(weights[task_id]) for task_id in weights}
 
     def compute_metrics(self, G: torch.Tensor):
         self.info = mtl_metrics.compute_metrics(G)
@@ -66,7 +70,7 @@ class BasicBalancer(torch.nn.Module):
             if not update_decoder_grads:
                 grad = torch.cat([p.flatten() if p is not None else torch.zeros_like(shared_params[i]).flatten()
                                   for i, p in enumerate(torch.autograd.grad(cur_loss, shared_params,
-                                                               retain_graph=True, allow_unused=True))])
+                                                                            retain_graph=True, allow_unused=True))])
             else:
                 for p in shared_params:
                     if p.grad is not None:
