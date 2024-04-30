@@ -1,4 +1,5 @@
 # MO-VAE
+![Alt sample generated](outputs/figures/samples_generated.png)\
 A multi-objective representation learning in variational autoencoder to stabilize the gradients calculated by breaking down the evidence lower bound (ELBO) loss function into two objectives.
 Our proposed method, named aligned multi-objective VAE (Aligned-MO-VAE), inspired by the multi-task learning, integrates two objectives known as reconstrion error and KL divergence simulatenously to optimize parameters with a gradient system that has zero conflict with others.
 ## Installation
