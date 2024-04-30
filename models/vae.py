@@ -1,3 +1,5 @@
+from math import ceil, floor
+
 import torch
 import torch.nn as nn
 
@@ -21,38 +23,51 @@ class UnFlatten(nn.Module):
 
 # Define the VAE model
 class VAE(nn.Module):
-    def __init__(self, latent_dim):
+    def __init__(self, latent_dim=2, in_height=32, in_channels=3):
         super(VAE, self).__init__()
-
         # Encoder
         self.encoder = nn.Sequential(
-            nn.Conv2d(3, 32, kernel_size=4, stride=2, padding=1),  # 32x32x3 -> 16x16x32
+            nn.Conv2d(in_channels, 32, kernel_size=3, stride=2, padding=1),  # 32x32x3 -> 16x16x32
             # nn.BatchNorm2d(32),
             nn.ReLU(),
             # PrintLayer(),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=1),  # 16x16x32 -> 8x8x64
+            nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1),  # 16x16x32 -> 8x8x64
             # nn.BatchNorm2d(64),
             nn.ReLU(),
-            nn.Conv2d(64, 128, kernel_size=4, stride=2, padding=1),  # 8x8x64 -> 4x4x128
+            # PrintLayer(),
+            # nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1),  # 8x8x64 -> 4x4x128
             # nn.BatchNorm2d(128),
-            nn.ReLU(),
+            # nn.ReLU(),
+            # PrintLayer(),
             nn.Flatten(),  # 26x26x128 -> 128x26x26
+            # nn.Linear(64 * int(floor(in_height / 4)) * int(floor(in_height / 4)), 16),
+            # PrintLayer(),
+
         )
         # Latent space
-        self.mu = nn.Linear(128 * 4 * 4, latent_dim)  # mean of the latent space
-        self.log_var = nn.Linear(128 * 4 * 4, latent_dim)  # log variance of the latent space
+        self.mu = nn.Linear(64 * int(floor(in_height / 4)) * int(floor(in_height / 4)), latent_dim)  # mean of the latent space
+        self.log_var = nn.Linear(64 * int(floor(in_height / 4)) * int(floor(in_height / 4)), latent_dim)  # log variance of the latent space
         # Decoder
         self.decoder = nn.Sequential(
-            nn.Linear(latent_dim, 128 * 4 * 4),  # 128 -> 128x4x4
-            UnFlatten(),  # 128x4x4 -> 4x4x128
-            nn.ConvTranspose2d(128, 64, kernel_size=4, stride=2, padding=1),  # 4x4x128 -> 8x8x64
+            nn.Linear(latent_dim, 64 * int(floor(in_height / 4)) * int(floor(in_height / 4))),  # 128 -> 128x4x4
+            # UnFlatten(),  # 128x4x4 -> 4x4x128
+            nn.Unflatten(1, (64, int(floor(in_height / 4)), int(floor(in_height / 4)))),
+            # PrintLayer(),
+            # nn.ConvTranspose2d(128, 64, kernel_size=3, stride=2, padding=1, output_padding=1),  # 4x4x128 -> 8x8x64
             # nn.BatchNorm2d(64),
-            nn.ReLU(),
-            nn.ConvTranspose2d(64, 32, kernel_size=4, stride=2, padding=1),  # 8x8x64 ->   16x16x32
+            # nn.ReLU(),
+            # PrintLayer(),
+            nn.ConvTranspose2d(64, 32, kernel_size=3, stride=2, padding=1, output_padding=1),  # 8x8x64 ->   16x16x32
             # nn.BatchNorm2d(32),
+            # PrintLayer(),
             nn.ReLU(),
-            nn.ConvTranspose2d(32, 3, kernel_size=4, stride=2, padding=1),  # 16x16x32 -> 32x32x3
-            # nn.BatchNorm2d(3),
+            nn.ConvTranspose2d(32, in_channels, kernel_size=3, stride=2, padding=1, output_padding=1),  # 16x16x32 -> 32x32x3
+            # PrintLayer(),
+            # nn.BatchNorm2d(in_channels),
+            # nn.ConvTranspose2d(in_channels, in_channels, kernel_size=4, stride=1, padding=0),
+            nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=1, padding=1),
+            # PrintLayer(),
+            # PrintLayer(),
             nn.Sigmoid()
         )
 
